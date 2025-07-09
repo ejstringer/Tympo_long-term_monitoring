@@ -337,10 +337,10 @@ site.labs <- c("Aerial", "Airport"   ,    "Bonshaw"  ,     "Cookanalla"  ,  "Jer
 names(site.labs) <- c("AerialPaddock" ,"Airport"   ,    "Bonshaw"  ,     "Cookanalla"  ,  "JerraEast" ,    "JerraWest"  ,   "Majura" )
 
 abundanceFig <- ggplot(out, aes(x = year, y = N, group = site))+
-  geom_errorbar(aes(ymin = lcl, ymax = ucl), colour = "grey", width = 0) +
   geom_line()+
-  geom_point(aes(colour = site), size = 2)+
-  geom_point(shape = 1, size = 2, colour = "black")+
+  geom_errorbar(aes(ymin = lcl, ymax = ucl), colour = "grey", width = 0) +
+  geom_point(shape =16, size = 1.5, colour = 'white')+
+  geom_point(shape = 1, size = 1.5, colour = "black")+
   facet_grid(site ~ grid.n, scales = "free",labeller=labeller(grid.n = grid.labs, site = site.labs))+
   scale_x_continuous(breaks = seq(2002, 2022, 2), 
                      labels = c(2002, '', 2006, '',2010, '', 2014, '', 2018, '', 2022 )) +
@@ -419,18 +419,23 @@ as <- as.vector(as)
 as <- as[!is.na(as)]
 cor_data <- data.frame(type = 'Within sites', correlation = ws,
                        mean = mean(ws), se = sd(ws)/sqrt(length(ws)),
-                       x = -0.75, y = 2.7) %>% 
+                       x = -0.75, y = 2.7, t = qt(0.975, df = length(ws)-1)) %>% 
   rbind(data.frame(type = 'Among sites', correlation = as,
                    mean = mean(as), se = sd(as)/sqrt(length(as)),
-                   x = -0.75, y = 2.7)) %>% 
+                   x = -0.75, y = 2.7, t = qt(0.975, df = length(as)-1))) %>% 
   filter(complete.cases(correlation)) %>% 
-  mutate(lwr = mean - se*1.96,
-         upr = mean + se*1.96,
+  mutate(lwr = mean - se*t,
+         upr = mean + se*t,
          est = paste0('mean = ', round(mean,2),
-                     ' (', round(lwr,2), ' - ',round(upr,2), ')'),
+                     ' (CI: ', round(lwr,2), ' - ',round(upr,2), ')'),
          est = ifelse(duplicated(est), NA, est))
 cor_data$est[!is.na(cor_data$est)]
 table(cor_data$type)
+
+
+tapply(cor_data$correlation, cor_data$type,
+       t.test, alternative = 'greater')
+
 
 corFig <- ggplot(cor_data, aes(x = correlation))+
   geom_histogram(colour = 'black')+
@@ -454,5 +459,5 @@ ggsave('./figures/correlation_N.png', corFig,width = 6, height = 5)
 
 
 # save N -------------------------------------------------------------------------
-write.csv(out, "./output/N_estimates.csv", row.names = F)
+write.csv(out[, c('N', 'se', 'lcl', 'ucl', 'year', 'grid')], "./output/N_estimates.csv", row.names = F)
 

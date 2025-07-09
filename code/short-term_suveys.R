@@ -53,6 +53,20 @@ gedplot <- ged %>%
 levels(gedplot$bare)
 levels(gedplot$vegstruct)
 
+# survey times -----------
+
+ged %>% 
+  group_by(site, Repeat, date) %>%
+  summarise(plots_surveyed = n()) %>% 
+  ungroup() %>% 
+  group_by(site, Repeat) %>% 
+  summarise(mindate = min(ymd(date)),
+            maxdate = max(ymd(date)),
+           # time = maxdate-mindate+1,
+            ndays = n(),
+            mean_plots = mean(plots_surveyed),
+            plots_surveyed = paste(plots_surveyed, collapse = '-'))
+
 # occupancy and detection -------------------------------------------------
 
 md <- ged
@@ -83,7 +97,13 @@ siteCovs$mburrows <- rowMeans(as.matrix(obsCovs$burrow)) # mean burrows per plot
 mdocc <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
 summary(mdocc)
 
+# structure models
 
+mB <- occu(~1 ~bare, mdocc)
+mB
+
+mV <- occu(~1 ~vegstruct, mdocc)
+mV
 
 # Null model
 
@@ -97,16 +117,33 @@ backTransform(fm1, 'det')   # detection
 fm <- occu(~grid + burrow ~site + grid + vegtype +mburrows, mdocc)
 fm
 
+
 # reduced model
 fmd <- occu(~1~grid+mburrows, mdocc)
 fmd
 
+backTransform(fmd, 'det')   # detection
+
 #
-fmlist <- fitList(Null = fm1, best = fmd,  full = fm)
+fmlist <- fitList(null = fm1, reduced = fmd, full = fm)
 modSel(fmlist)
 
+aictable <- modSel(fmlist)@Full[, c('model', 'n', 'AIC',
+                                    'delta', 'AICwt', 
+                                    'cumltvWt', 'formula')]
 
-## model table --------
+aictable %>% 
+  mutate_if(is.numeric, round, 2) %>% 
+flextable() %>% 
+  width(j = 7, width = 2.1, unit = "in") %>% 
+  bold(part = 'header') %>% 
+  border_outer() %>% 
+  hline(part = 'header', 
+        border = fp_border_default(color = 'grey', width = 2)) %>% 
+  save_as_docx(path = './figures/occupany_models_aic.docx')
+
+
+  ## model table --------
 
 sum_fmd <- summary(fmd)
 
@@ -121,6 +158,19 @@ rbind(cbind(Type = c('Occupancy', NA,NA),
   save_as_docx(path = './figures/occupany_model_final.docx')
 
 # predictions -------------------------------------------------------------
+# https://cran.r-project.org/web/packages/unmarked/vignettes/unmarked.html
+
+chisq <- function(fm) {
+  umf <- fm@data
+  y <- umf@y
+  y[y>1] <- 1
+  fv <- fitted(fm)
+  sum((y-fv)^2/(fv*(1-fv)), na.rm=TRUE)
+}
+
+set.seed(1)
+(pb <- parboot(fmd, statistic=chisq, nsim=100, parallel=FALSE))
+
 
 ## predict detecton ---------
 backTransform(fmd, 'det')   # detection
@@ -143,7 +193,8 @@ p<- ggplot(fit, aes(mburrows, Predicted, colour = grid, fill = grid))+
   scale_color_manual(values =myCol, name = 'Monitoring grids')+
   scale_fill_manual(values =myCol, name = 'Monitoring grids')+
   theme_classic()+
-  theme(legend.position = c(0.15, 0.7),
+  theme(legend.position = 'inside',
+        legend.position.inside = c(0.15, 0.7),
         legend.background = element_rect(colour = 'grey'))+
   xlab(expression('Number of burrows / 20 m'^2,')'))+ # mean number of burrows/20m^2
   ylab('Occupancy');p
@@ -217,7 +268,7 @@ prob_dragon
 
 ### plot ---------------
 ppp<- ggplot(prob_dragon$sim, aes(x = sim))+
-  geom_histogram(fill = '#0000FF', colour = 'black', alpha = 0.3)+
+  geom_histogram(fill = 'grey60', colour = 'black', alpha = 0.3)+
   theme_classic()+
   xlab('Mean distance')+
   ylab('Frequency')+

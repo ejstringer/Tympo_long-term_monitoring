@@ -23,7 +23,8 @@
 #=======================================================================##
 
 # code -------------------------------------------------------------------
-
+# Google Earth Engine code
+# https://code.earthengine.google.com/4e81453e81d8a08c65e3e6166d23400f
 # libraries ---------------------------------------------------------------
 
 library(tidyverse)
@@ -112,15 +113,44 @@ mc
 # hurdle model ------------------------------------------------------------------------
 # hurdle model with random effects for grid and year
 
-m_hurdle <- brm(bf(N_round ~ s(scale_LST) + s(scale_NDVI) + (1|year) + (1|grid),
+m_hurdle <- brm(bf(N_round ~ s(scale_LST) +s(scale_NDVI) + (1|year) + (1|grid),
              hu ~ s(scale_LST) + s(scale_NDVI) + (1|year) + (1|grid)),
           data = landsat_cap, iter = 4000, 
           family = hurdle_negbinomial(),  # needs integer response
           control = list(adapt_delta = 0.999))
 
 summary(m_hurdle)
-ranef(m_hurdle)
+m_hurdle
 
+R2_mhurdle <- bayes_R2(m_hurdle)
+
+sum_model <- summary(m_hurdle)
+mhurdle_tbl <- rbind(sum_model$spec_pars,
+                     sum_model$splines, 
+                     sum_model$spec_pars, 
+                     sum_model$fixed) %>% 
+  mutate_all(round, 2) %>% 
+  mutate(Parameter = rownames(.),
+         Parameter = sub('_1', '', Parameter)) %>% 
+  relocate(Parameter)
+
+mhurdle_tbl[grepl('shape', mhurdle_tbl$Parameter),] <- NA
+mhurdle_tbl$Parameter[is.na(mhurdle_tbl$Parameter)] <- c('SPLINES', 'FIXED')
+mhurdle_tbl$R2 <- NA
+mhurdle_tbl$R2[1] <- round(R2_mhurdle[1],2)
+flextable(mhurdle_tbl) %>% 
+  autofit() %>% 
+  bold(i = c(1,6), j = 1) %>% 
+  bold(j = 9, part = 'all') %>% 
+  vline(j = 8,
+        border = fp_border_default(style = 'solid', color = 'grey',
+                                   width = 1)) %>% 
+  align(align = 'center', j = 9, part = 'all') %>% 
+  hline(i = 5, j = 1:8, border = fp_border_default(style = 'solid', color = 'grey',
+                                          width = 2)) %>% 
+  border_outer() %>%
+  colformat_double(,j = 7:8, big.mark = "", digits = 0) %>% 
+  save_as_docx(path = './figures/hurdle_model.docx')
 
 ## conditional effects ---------------------
 nd1 <- data.frame(scale_NDVI = seq(-2, 3, 0.01),
@@ -138,11 +168,11 @@ p2 <- fitted(m_hurdle, newdata = nd2, re_formula = NA)#[, 1]
 landsat_cap$spred <- predict(m_hurdle, re_formula = NA)[, 1]
 
 
-# nd1$NDVI <-  (nd1$scale_NDVI* sd(landsat$NDVI)  + mean(landsat$NDVI)) 
-# nd2$NDVI <-  (nd2$scale_NDVI* sd(landsat$NDVI)  + mean(landsat$NDVI)) 
+ nd1$NDVI <-  (nd1$scale_NDVI* sd(landsat$NDVI)  + mean(landsat$NDVI)) 
+ nd2$NDVI <-  (nd2$scale_NDVI* sd(landsat$NDVI)  + mean(landsat$NDVI)) 
 # 
-# nd1$LST <-  (nd1$scale_LST* sd(landsat$LST) + mean(landsat$LST)) 
-# nd2$LST <-  (nd2$scale_LST * sd(landsat$LST) + mean(landsat$LST))
+ nd1$LST <-  (nd1$scale_LST* sd(landsat$LST) + mean(landsat$LST)) 
+ nd2$LST <-  (nd2$scale_LST * sd(landsat$LST) + mean(landsat$LST))
 
 
 ## plot --------------------------------------------------------------------------
@@ -192,5 +222,56 @@ polygon(c(nd2$scale_LST, rev(nd2$scale_LST)),
 lines(nd2$scale_LST, p2[,1], lwd = 3)
 
 dev.off()
+
+
+
+## plot v2 -----------------------------------------------------------------
+
+op <- 0.5
+# colour gradient
+rbPal <- colorRampPalette(c(rgb(0, 0, 1, op), rgb(1, 0, 0, op)), alpha = TRUE)
+
+
+png("./figures/landsat_dragons_notscaled.png", width = 8, height = 8, res = 600, units = 'in')
+par(mfrow = c(2, 2))
+
+# plot presence (red) and absence (blue) of dragons
+# circle size proportional to number of captures
+occ <- ifelse(landsat_cap$ncap > 0, 1, 0)
+cl <- ifelse(occ == 1, rgb(1, 0, 0, op), rgb(0, 0, 1, op))
+cx <- ifelse(occ == 0, 0.7, landsat_cap$N_round/30 + 0.7)
+plot(LST ~ NDVI, data = landsat_cap, pch = 19, cex = cx, col = cl,
+     ylab = "LST", xlab = "NDVI",
+     main = "Occupancy and abundance")
+legend(1, 2.2, legend = c("Occupied", "Unoccupied"), fill = c("#FF0000", "#0000FF"))
+text(1.5, 2.4, substitute(italic(r)["LST, NDVI"]~" = "~x~", "~italic(P)~"<0.001", list(x = round(mc$estimate, 2))), 
+     cex = 1)
+
+cx <- landsat_cap$spred/5 + 0.7
+cl <- rbPal(10)[as.numeric(cut(landsat_cap$spred, breaks = 10))]
+plot(LST ~ NDVI, data = landsat_cap, pch = 19, cex = cx, col = cl,
+     ylab = "LST", xlab = "NDVI",
+     main = "Predicted abundance")
+
+plot(p1[,1] ~ nd1$NDVI, pch = 19, ylim = c(0, 26),col = 'white',
+     ylab = "Abundance", xlab = "NDVI", main = "NDVI")
+polygon(c(nd1$NDVI, rev(nd1$NDVI)),
+        c(p1[,3], rev(p1[,4])),
+        col = adjustcolor("grey", 0.3),
+        border = adjustcolor("grey", 0.3))  
+lines(nd1$NDVI, p1[,1], lwd = 3)
+
+plot(p2[,1] ~ nd2$LST, pch = 19, ylim = c(0, 26), col = 'white',
+     ylab = "Abundance", xlab = "LST", main = "LST")
+
+polygon(c(nd2$LST, rev(nd2$LST)),
+        c(p2[,3], rev(p2[,4])),
+        col = adjustcolor("grey", 0.3),
+        border = adjustcolor("grey", 0.3))  
+lines(nd2$LST, p2[,1], lwd = 3)
+
+dev.off()
+
+
 
 

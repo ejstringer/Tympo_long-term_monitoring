@@ -16,7 +16,6 @@ There are four data files associated with this analysis.
 3. ged_occupancy_surveys2018.csv  
 4. ged_survey_numbers2002-2023.csv
 
-
 ### Details for: ged_grids_satellite2000-2020.csv  
  Description: a comma-delimited file containing satellite imagery data.
 
@@ -120,3 +119,23 @@ Dimensions: 483 rows x 4 columns
     * grid: grid code
     * year: year of dragon surveys
     * checks: number of times monitoring grids were checked during the survey period
+
+
+### Details for: N_estimates.csv (located in output folder)
+Description: a comma-delimited file containing abundance estimates calculated from the long-term_monitoring.R file. N_estimates.R is located in the output folder.
+
+Format(s): .csv
+
+Size(s): 24.4 KB
+
+Dimensions: 277 rows x 6 columns
+
+- Variables:
+
+    * N: abundance estimate
+    * se: standard error
+    * lcl: lower 95% confidence interval
+    * ucl: upper 95% confidence interval
+    * year: year of dragon survey
+    * grid: site name and monitoring grid id
+    
