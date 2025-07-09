@@ -240,8 +240,8 @@ par(mfrow = c(2, 2))
 occ <- ifelse(landsat_cap$ncap > 0, 1, 0)
 cl <- ifelse(occ == 1, rgb(1, 0, 0, op), rgb(0, 0, 1, op))
 cx <- ifelse(occ == 0, 0.7, landsat_cap$N_round/30 + 0.7)
-plot(LST ~ NDVI, data = landsat_cap, pch = 19, cex = cx, col = cl,
-     ylab = "LST", xlab = "NDVI",
+plot(scale_LST ~ scale_NDVI, data = landsat_cap, pch = 19, cex = cx, col = cl,
+     ylab = "scaled LST", xlab = "scaled NDVI",
      main = "Occupancy and abundance")
 legend(1, 2.2, legend = c("Occupied", "Unoccupied"), fill = c("#FF0000", "#0000FF"))
 text(1.5, 2.4, substitute(italic(r)["LST, NDVI"]~" = "~x~", "~italic(P)~"<0.001", list(x = round(mc$estimate, 2))), 
@@ -249,9 +249,10 @@ text(1.5, 2.4, substitute(italic(r)["LST, NDVI"]~" = "~x~", "~italic(P)~"<0.001"
 
 cx <- landsat_cap$spred/5 + 0.7
 cl <- rbPal(10)[as.numeric(cut(landsat_cap$spred, breaks = 10))]
-plot(LST ~ NDVI, data = landsat_cap, pch = 19, cex = cx, col = cl,
-     ylab = "LST", xlab = "NDVI",
+plot(scale_LST ~ scale_NDVI, data = landsat_cap, pch = 19, cex = cx, col = cl,
+     ylab = "scaled LST", xlab = "scaled NDVI",
      main = "Predicted abundance")
+
 
 plot(p1[,1] ~ nd1$NDVI, pch = 19, ylim = c(0, 26),col = 'white',
      ylab = "Abundance", xlab = "NDVI", main = "NDVI")
