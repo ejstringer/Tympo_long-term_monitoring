@@ -12,10 +12,10 @@ There are four data files associated with this analysis.
 
 1.  ged_grids_satellite2000-2020.csv
 2.  ged_monitoring_grids2002-2023.csv <sup>1</sup>
-3.  ged_occupancy_surveys2018.csv\
+3.  ged_occupancy_surveys2018.csv
 4.  ged_survey_numbers2002-2023.csv <sup>1</sup>
 
-<sup>1</sup> **Data supplied by “Australian Capital Territory (City and Environment Directorate, 2023)”**
+<sup>1</sup> **Data supplied by “Australian Capital Territory (City and Environment Directorate, 2023)”. Data was de-identified to protect species locations**
 
 and one output file included.
 
