@@ -15,7 +15,7 @@ There are four data files associated with this analysis.
 3.  ged_occupancy_surveys2018.csv
 4.  ged_survey_numbers2002-2023.csv <sup>1</sup>
 
-<sup>1</sup> **Data supplied by “Australian Capital Territory (City and Environment Directorate, 2023)”. Data was de-identified to protect species locations**
+<sup>1</sup> **Data supplied by “Australian Capital Territory (City and Environment Directorate, 2024)”. Data was de-identified to protect species locations**
 
 and one output file included.
 
@@ -75,7 +75,7 @@ Dimensions: 2199 rows x 15 columns
 
 -   Missing data codes: blank cell and NA
 
-Data supplied by “Australian Capital Territory (City and Environment Directorate, 2023)”.
+Data supplied by “Australian Capital Territory (City and Environment Directorate, 2024)”.
 
 ### Details for: ged_occupancy_surveys2018.csv
 
@@ -129,7 +129,7 @@ Dimensions: 483 rows x 4 columns
     -   year: year of dragon surveys
     -   checks: number of times monitoring grids were checked during the survey period
 
-Data supplied by “Australian Capital Territory (City and Environment Directorate, 2023)”.
+Data supplied by “Australian Capital Territory (City and Environment Directorate, 2024)”.
 
 ### Details for: N_estimates.csv
 
